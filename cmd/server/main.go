@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/DulanHewage/GoImager/internal/handler"
+	"GoImager/internal/handler"
 
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -21,13 +21,11 @@ func main() {
 	
 	r := mux.NewRouter()
 
-	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("GoImager"))
-	}).Methods("GET")
-
 	r.HandleFunc("/resize", handler.ResizeHandler).Methods("POST")
 	r.HandleFunc("/convert", handler.ConvertHandler).Methods("POST")
-	r.HandleFunc("/optimize", handler.OptimizeHandler).Methods("POST")
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("GoImager"))
+}).Methods("GET")
 
 	port := os.Getenv("PORT")
 	if port == "" {
