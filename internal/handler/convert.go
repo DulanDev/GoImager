@@ -2,39 +2,46 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
-	"GoImager/internal/service"
+	"github.com/DulanDev/GoImager/internal/service"
 )
 
-func ConvertHandler(w http.ResponseWriter, r *http.Request) {
-	// Parse the multipart form
-	err := r.ParseMultipartForm(10 << 20) // 10 MB limit
-	if err != nil {
-		http.Error(w, "Unable to parse form", http.StatusBadRequest)
+func (s *Server) Convert(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseMultipartForm(s.maxBytes()); err != nil {
+		writeError(w, http.StatusBadRequest, "PAYLOAD_TOO_LARGE", "request body exceeds max file size")
 		return
 	}
 
-	// Get the file from the request
 	file, _, err := r.FormFile("image")
 	if err != nil {
-		http.Error(w, "Unable to get file", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "MISSING_IMAGE", "image field is required")
 		return
 	}
 	defer file.Close()
 
-	// Get the target format
 	format := r.FormValue("format")
-
-	// Convert the image
-	converted, contentType, err := service.ConvertImage(file, format)
-	if err != nil {
-		http.Error(w, "Unable to convert image", http.StatusInternalServerError)
+	if format == "" {
+		writeError(w, http.StatusBadRequest, "MISSING_FORMAT", "format field is required")
 		return
 	}
 
-	// Set the content type
-	w.Header().Set("Content-Type", contentType)
+	quality := s.defaultQuality()
+	if q := r.FormValue("quality"); q != "" {
+		if n, err := strconv.Atoi(q); err == nil {
+			quality = n
+		} else {
+			writeError(w, http.StatusBadRequest, "INVALID_QUALITY", "quality must be an integer 1-100")
+			return
+		}
+	}
 
-	// Write the converted image to the response
-	w.Write(converted)
+	out, ct, err := service.ConvertImage(file, format, quality, s.optimizerCfg())
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", ct)
+	w.Write(out)
 }

@@ -1,0 +1,47 @@
+package handler
+
+import (
+	"encoding/json"
+	"log/slog"
+	"net/http"
+
+	"github.com/DulanDev/GoImager/internal/config"
+)
+
+type Server struct {
+	Cfg config.Config
+	Log *slog.Logger
+}
+
+func New(cfg config.Config, log *slog.Logger) *Server {
+	return &Server{Cfg: cfg, Log: log}
+}
+
+type errResp struct {
+	Error string `json:"error"`
+	Code  string `json:"code"`
+}
+
+func writeError(w http.ResponseWriter, status int, code, msg string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(errResp{Error: msg, Code: code})
+}
+
+func (s *Server) maxBytes() int64 {
+	if s.Cfg.Server.MaxFileSizeMB <= 0 {
+		return 20 << 20
+	}
+	return int64(s.Cfg.Server.MaxFileSizeMB) << 20
+}
+
+func (s *Server) defaultQuality() int {
+	if s.Cfg.Quality.Default <= 0 {
+		return 85
+	}
+	return s.Cfg.Quality.Default
+}
+
+func (s *Server) optimizerCfg() config.Optimizer {
+	return s.Cfg.Optimizer
+}

@@ -4,39 +4,59 @@ import (
 	"net/http"
 	"strconv"
 
-	"GoImager/internal/service"
+	"github.com/DulanDev/GoImager/internal/service"
 )
 
-func ResizeHandler(w http.ResponseWriter, r *http.Request) {
-	// Parse the multipart form
-	err := r.ParseMultipartForm(10 << 20) // 10 MB limit
-	if err != nil {
-		http.Error(w, "Unable to parse form", http.StatusBadRequest)
+func (s *Server) Resize(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseMultipartForm(s.maxBytes()); err != nil {
+		writeError(w, http.StatusBadRequest, "PAYLOAD_TOO_LARGE", "request body exceeds max file size")
 		return
 	}
 
-	// Get the file from the request
 	file, _, err := r.FormFile("image")
 	if err != nil {
-		http.Error(w, "Unable to get file", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "MISSING_IMAGE", "image field is required")
 		return
 	}
 	defer file.Close()
 
-	// Get the new dimensions
-	width, _ := strconv.Atoi(r.FormValue("width"))
-	height, _ := strconv.Atoi(r.FormValue("height"))
-
-	// Resize the image
-	resized, err := service.ResizeImage(file, width, height)
+	width, err := strconv.Atoi(r.FormValue("width"))
 	if err != nil {
-		http.Error(w, "Unable to resize image", http.StatusInternalServerError)
+		writeError(w, http.StatusBadRequest, "INVALID_DIMENSIONS", "width must be an integer")
+		return
+	}
+	height, err := strconv.Atoi(r.FormValue("height"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_DIMENSIONS", "height must be an integer")
 		return
 	}
 
-	// Set the content type
-	w.Header().Set("Content-Type", "image/png")
+	mode := r.FormValue("mode")
+	format := r.FormValue("format")
+	quality := s.defaultQuality()
+	if q := r.FormValue("quality"); q != "" {
+		if n, err := strconv.Atoi(q); err == nil {
+			quality = n
+		} else {
+			writeError(w, http.StatusBadRequest, "INVALID_QUALITY", "quality must be an integer 1-100")
+			return
+		}
+	}
 
-	// Write the resized image to the response
-	w.Write(resized)
+	out, ct, err := service.ResizeImage(file, width, height, mode, format, quality, s.optimizerCfg())
+	if err != nil {
+		writeServiceError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", ct)
+	w.Write(out)
+}
+
+func writeServiceError(w http.ResponseWriter, err error) {
+	if inv, ok := err.(*service.ErrInvalid); ok {
+		writeError(w, http.StatusBadRequest, inv.Code, inv.Message)
+		return
+	}
+	writeError(w, http.StatusInternalServerError, "INTERNAL", err.Error())
 }

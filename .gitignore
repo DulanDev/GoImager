@@ -1,1 +1,5 @@
 .env
+goimager.yaml
+coverage.out
+*.out
+goImager

@@ -1,0 +1,24 @@
+server:
+  port: 8080
+  max_file_size_mb: 20
+  max_dimension: 10000
+
+quality:
+  default: 85
+
+auth:
+  api_key: ""            # empty = no auth required
+
+rate_limit:
+  rps: 100
+
+optimizer:
+  pngquant_path: pngquant
+  mozjpeg_path: cjpeg
+  cwebp_path: cwebp
+
+logging:
+  level: info
+  format: json
+
+allowed_domains: "*"     # "*" or comma-separated list, e.g. "cdn.example.com,images.example.com"
