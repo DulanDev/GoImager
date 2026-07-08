@@ -1,0 +1,13 @@
+version: "3.8"
+services:
+  goImager:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - MAX_FILE_SIZE_MB=20
+      - DEFAULT_QUALITY=85
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+    restart: unless-stopped
