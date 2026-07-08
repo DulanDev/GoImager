@@ -13,7 +13,7 @@ Go-based microservice for resizing, converting, and optimizing images
 
 ```sh
 # Clone the repository
-git clone https://github.com/yourusername/ImageProcessGo.git
+git clone https://github.com/DulanDev/GoImager
 
 # Navigate to the project directory
 cd GoImager
@@ -29,9 +29,9 @@ The server will start on `http://localhost:8080`.
 
 ## API Endpoints
 
-- `POST /resize`: Resize an image
-- `POST /convert`: Convert an image to a different format
-- `POST /optimize`: Optimize an image for web use :: **TODO**
+- `POST /resize`: Resize an image (params: `image`, `width`, `height`, optional `format` jpeg|png|gif, `quality` 1-100)
+- `POST /convert`: Convert an image to a different format (`image`, `format` jpeg|png|gif)
+- `POST /optimize`: Optimize an image for web use (`image`, optional `quality` 1-100, `strip_exif`, `format`)
 
 ## Configuration
 
