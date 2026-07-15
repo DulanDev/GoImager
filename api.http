@@ -1,0 +1,223 @@
+### Variables
+@baseUrl = http://localhost:8080
+@testImage = ./test/fixtures/sample.jpg
+
+### -------------------------------------------------------------------
+### GET /
+### Root — returns plain-text server identity
+### -------------------------------------------------------------------
+GET {{baseUrl}}/
+Accept: text/plain
+
+### -------------------------------------------------------------------
+### GET /health
+### Health check — returns status and version
+### -------------------------------------------------------------------
+GET {{baseUrl}}/health
+Accept: application/json
+
+### -------------------------------------------------------------------
+### GET /info
+### Get image metadata (multipart form)
+### -------------------------------------------------------------------
+GET {{baseUrl}}/info
+Content-Type: multipart/form-data; boundary=----boundary
+
+------boundary
+Content-Disposition: form-data; name="image"; filename="sample.jpg"
+Content-Type: image/jpeg
+
+< {{testImage}}
+------boundary--
+
+### -------------------------------------------------------------------
+### POST /info
+### Get image metadata (same handler, POST allowed)
+### -------------------------------------------------------------------
+POST {{baseUrl}}/info
+Content-Type: multipart/form-data; boundary=----boundary
+
+------boundary
+Content-Disposition: form-data; name="image"; filename="sample.jpg"
+Content-Type: image/jpeg
+
+< {{testImage}}
+------boundary--
+
+### -------------------------------------------------------------------
+### POST /resize
+### Resize image — fit mode (default), width=400, height=300
+### -------------------------------------------------------------------
+POST {{baseUrl}}/resize
+Content-Type: multipart/form-data; boundary=----boundary
+
+------boundary
+Content-Disposition: form-data; name="image"; filename="sample.jpg"
+Content-Type: image/jpeg
+
+< {{testImage}}
+------boundary
+Content-Disposition: form-data; name="width"
+
+400
+------boundary
+Content-Disposition: form-data; name="height"
+
+300
+------boundary
+Content-Disposition: form-data; name="mode"
+
+fit
+------boundary
+Content-Disposition: form-data; name="format"
+
+jpeg
+------boundary
+Content-Disposition: form-data; name="quality"
+
+85
+------boundary--
+
+### -------------------------------------------------------------------
+### POST /resize — fill mode, WebP output
+### -------------------------------------------------------------------
+POST {{baseUrl}}/resize
+Content-Type: multipart/form-data; boundary=----boundary
+
+------boundary
+Content-Disposition: form-data; name="image"; filename="sample.jpg"
+Content-Type: image/jpeg
+
+< {{testImage}}
+------boundary
+Content-Disposition: form-data; name="width"
+
+800
+------boundary
+Content-Disposition: form-data; name="height"
+
+600
+------boundary
+Content-Disposition: form-data; name="mode"
+
+fill
+------boundary
+Content-Disposition: form-data; name="format"
+
+webp
+------boundary
+Content-Disposition: form-data; name="quality"
+
+90
+------boundary--
+
+### -------------------------------------------------------------------
+### POST /resize — stretch mode, auto-width (0), PNG output
+### -------------------------------------------------------------------
+POST {{baseUrl}}/resize
+Content-Type: multipart/form-data; boundary=----boundary
+
+------boundary
+Content-Disposition: form-data; name="image"; filename="sample.jpg"
+Content-Type: image/jpeg
+
+< {{testImage}}
+------boundary
+Content-Disposition: form-data; name="width"
+
+0
+------boundary
+Content-Disposition: form-data; name="height"
+
+500
+------boundary
+Content-Disposition: form-data; name="mode"
+
+stretch
+------boundary
+Content-Disposition: form-data; name="format"
+
+png
+------boundary--
+
+### -------------------------------------------------------------------
+### POST /convert
+### Convert image to PNG
+### -------------------------------------------------------------------
+POST {{baseUrl}}/convert
+Content-Type: multipart/form-data; boundary=----boundary
+
+------boundary
+Content-Disposition: form-data; name="image"; filename="sample.jpg"
+Content-Type: image/jpeg
+
+< {{testImage}}
+------boundary
+Content-Disposition: form-data; name="format"
+
+png
+------boundary
+Content-Disposition: form-data; name="quality"
+
+90
+------boundary--
+
+### -------------------------------------------------------------------
+### POST /convert — to WebP
+### -------------------------------------------------------------------
+POST {{baseUrl}}/convert
+Content-Type: multipart/form-data; boundary=----boundary
+
+------boundary
+Content-Disposition: form-data; name="image"; filename="sample.jpg"
+Content-Type: image/jpeg
+
+< {{testImage}}
+------boundary
+Content-Disposition: form-data; name="format"
+
+webp
+------boundary--
+
+### -------------------------------------------------------------------
+### POST /optimize
+### Optimize image (default quality 80, strip EXIF)
+### -------------------------------------------------------------------
+POST {{baseUrl}}/optimize
+Content-Type: multipart/form-data; boundary=----boundary
+
+------boundary
+Content-Disposition: form-data; name="image"; filename="sample.jpg"
+Content-Type: image/jpeg
+
+< {{testImage}}
+------boundary
+Content-Disposition: form-data; name="format"
+
+jpeg
+------boundary--
+
+### -------------------------------------------------------------------
+### POST /optimize — quality=75, preserve EXIF
+### -------------------------------------------------------------------
+POST {{baseUrl}}/optimize
+Content-Type: multipart/form-data; boundary=----boundary
+
+------boundary
+Content-Disposition: form-data; name="image"; filename="sample.jpg"
+Content-Type: image/jpeg
+
+< {{testImage}}
+------boundary
+Content-Disposition: form-data; name="format"
+
+png
+------boundary
+Content-Disposition: form-data; name="quality"
+
+75
+------boundary
+Content-Disposition: form-data; name="strip_exif"
+
+false
+------boundary--
