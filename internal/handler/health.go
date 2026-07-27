@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-const Version = "1.0.0"
+const Version = "1.1.0"
 
 func (s *Server) Health(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
