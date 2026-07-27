@@ -4,17 +4,25 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/DulanDev/GoImager/internal/config"
 )
 
 type Server struct {
-	Cfg config.Config
-	Log *slog.Logger
+	Cfg        config.Config
+	Log        *slog.Logger
+	HTTPClient *http.Client
 }
 
 func New(cfg config.Config, log *slog.Logger) *Server {
-	return &Server{Cfg: cfg, Log: log}
+	return &Server{
+		Cfg: cfg,
+		Log: log,
+		HTTPClient: &http.Client{
+			Timeout: 20 * time.Second,
+		},
+	}
 }
 
 type errResp struct {
