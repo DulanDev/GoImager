@@ -37,12 +37,14 @@ type Auth struct {
 
 type RateLimit struct {
 	RPS int `yaml:"rps"`
+	RPM int `yaml:"rpm"`
 }
 
 type Optimizer struct {
 	PngquantPath string `yaml:"pngquant_path"`
 	MozjpegPath  string `yaml:"mozjpeg_path"`
 	CwebpPath    string `yaml:"cwebp_path"`
+	AvifPath     string `yaml:"avif_path"`
 }
 
 type Logging struct {
@@ -56,7 +58,7 @@ func defaults() Config {
 		Quality:   Quality{Default: 85},
 		Auth:      Auth{APIKey: ""},
 		RateLimit: RateLimit{RPS: 100},
-		Optimizer: Optimizer{PngquantPath: "pngquant", MozjpegPath: "cjpeg", CwebpPath: "cwebp"},
+		Optimizer: Optimizer{PngquantPath: "pngquant", MozjpegPath: "cjpeg", CwebpPath: "cwebp", AvifPath: "avifenc"},
 		Logging:   Logging{Level: "info", Format: "json"},
 		Allowed:   []string{"*"},
 	}
@@ -95,11 +97,13 @@ func applyEnv(c *Config) {
 	envInt("DEFAULT_QUALITY", &c.Quality.Default)
 	envStr("API_KEY", &c.Auth.APIKey)
 	envInt("RATE_LIMIT_RPS", &c.RateLimit.RPS)
+	envInt("RATE_LIMIT_RPM", &c.RateLimit.RPM)
 	envStr("LOG_LEVEL", &c.Logging.Level)
 	envStr("LOG_FORMAT", &c.Logging.Format)
 	envStr("OPTIMIZER_PNGQUANT_PATH", &c.Optimizer.PngquantPath)
 	envStr("OPTIMIZER_MOZJPEG_PATH", &c.Optimizer.MozjpegPath)
 	envStr("OPTIMIZER_CWEBP_PATH", &c.Optimizer.CwebpPath)
+envStr("OPTIMIZER_AVIF_PATH", &c.Optimizer.AvifPath)
 	if v, ok := os.LookupEnv("ALLOWED_DOMAINS"); ok {
 		if v == "*" {
 			c.Allowed = []string{"*"}

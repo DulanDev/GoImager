@@ -11,11 +11,13 @@ auth:
 
 rate_limit:
   rps: 100
+  rpm: 0            # 0 = use rps; >0 overrides rps with per-minute limit
 
 optimizer:
   pngquant_path: pngquant
   mozjpeg_path: cjpeg
   cwebp_path: cwebp
+  avif_path: avifenc
 
 logging:
   level: info
