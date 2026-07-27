@@ -27,6 +27,12 @@ func main() {
 
 	srv := handler.New(cfg, log)
 	r := mux.NewRouter()
+
+	rl := middleware.NewRateLimiter(cfg.RateLimit.RPS, cfg.RateLimit.RPM)
+
+	r.Use(middleware.ProcessingTimeAdapter())
+	r.Use(middleware.AuthAdapter(cfg.Auth.APIKey))
+	r.Use(rl.Adapter())
 	r.Use(middleware.RequestLogger(log))
 
 	r.HandleFunc("/health", srv.Health).Methods("GET")
@@ -34,6 +40,8 @@ func main() {
 	r.HandleFunc("/resize", srv.Resize).Methods("POST")
 	r.HandleFunc("/convert", srv.Convert).Methods("POST")
 	r.HandleFunc("/optimize", srv.Optimize).Methods("POST")
+	r.HandleFunc("/thumbnail", srv.Thumbnail).Methods("POST")
+	r.HandleFunc("/process", srv.Process).Methods("GET")
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("GoImager"))
 	}).Methods("GET")
@@ -55,6 +63,9 @@ func warnMissingTools(cfg *config.Config, log *slog.Logger) {
 	}
 	if cfg.Optimizer.CwebpPath != "" && !toolExists(cfg.Optimizer.CwebpPath) {
 		log.Warn("cwebp not found; WebP output unavailable", "path", cfg.Optimizer.CwebpPath)
+	}
+	if cfg.Optimizer.AvifPath != "" && !toolExists(cfg.Optimizer.AvifPath) {
+		log.Warn("avifenc not found; AVIF output unavailable, falls back to JPEG", "path", cfg.Optimizer.AvifPath)
 	}
 }
 

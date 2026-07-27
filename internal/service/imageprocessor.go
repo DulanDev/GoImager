@@ -9,6 +9,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -23,7 +24,7 @@ const MaxDimCap = 100000
 var ErrUnsupportedFormat = errors.New("unsupported format")
 
 func SupportedFormats() []string {
-	return []string{"jpeg", "png", "webp", "gif"}
+	return []string{"jpeg", "png", "webp", "gif", "avif"}
 }
 
 func NormalizeFormat(f string) (string, error) {
@@ -36,6 +37,8 @@ func NormalizeFormat(f string) (string, error) {
 		return "webp", nil
 	case "gif":
 		return "gif", nil
+	case "avif":
+		return "avif", nil
 	default:
 		return "", fmt.Errorf("%w: %s", ErrUnsupportedFormat, f)
 	}
@@ -51,6 +54,8 @@ func ContentType(format string) string {
 		return "image/webp"
 	case "gif":
 		return "image/gif"
+	case "avif":
+		return "image/avif"
 	}
 	return "application/octet-stream"
 }
@@ -153,6 +158,8 @@ func Encode(img image.Image, format string, quality int, cfg config.Optimizer) (
 		}
 	case "webp":
 		return encodeWebp(img, quality, cfg)
+	case "avif":
+		return encodeAvif(img, quality, cfg)
 	default:
 		return nil, "", fmt.Errorf("%w: %s", ErrUnsupportedFormat, format)
 	}
@@ -178,6 +185,49 @@ func encodeWebp(img image.Image, quality int, cfg config.Optimizer) ([]byte, str
 	return out.Bytes(), ContentType("webp"), nil
 }
 
+func encodeAvif(img image.Image, quality int, cfg config.Optimizer) ([]byte, string, error) {
+	if cfg.AvifPath == "" {
+		return nil, "", &ErrInvalid{Code: "AVIF_UNAVAILABLE", Message: "avifenc not configured"}
+	}
+	inFile, err := os.CreateTemp("", "goimager-avif-*.png")
+	if err != nil {
+		return nil, "", err
+	}
+	defer os.Remove(inFile.Name())
+	inFile.Close()
+	if err := pngEncodeFile(inFile.Name(), img); err != nil {
+		return nil, "", err
+	}
+	outFile, err := os.CreateTemp("", "goimager-avif-*.avif")
+	if err != nil {
+		return nil, "", err
+	}
+	defer os.Remove(outFile.Name())
+	outFile.Close()
+
+	cmd := exec.Command(cfg.AvifPath, "-q", strconv.Itoa(quality), "-s", "6", "-o", outFile.Name(), inFile.Name())
+	var errBuf bytes.Buffer
+	cmd.Stderr = &errBuf
+	if err := cmd.Run(); err != nil {
+		return nil, "", fmt.Errorf("avifenc failed: %w: %s", err, errBuf.String())
+	}
+	data, err := os.ReadFile(outFile.Name())
+	if err != nil {
+		return nil, "", err
+	}
+	return data, ContentType("avif"), nil
+}
+
+func pngEncodeFile(path string, img image.Image) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	enc := png.Encoder{CompressionLevel: png.BestCompression}
+	return enc.Encode(f, img)
+}
+
 func clampQuality(q int) int {
 	if q <= 0 || q > 100 {
 		return 85
@@ -190,4 +240,32 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// Thumbnail produces a fixed-size center-crop thumbnail. format defaults to webp.
+func Thumbnail(src io.Reader, width, height int, format string, quality int, cfg config.Optimizer) ([]byte, string, error) {
+	if width <= 0 || height <= 0 {
+		return nil, "", &ErrInvalid{Code: "INVALID_DIMENSIONS", Message: "width and height must be positive"}
+	}
+	if width > MaxDimCap || height > MaxDimCap {
+		return nil, "", &ErrInvalid{Code: "INVALID_DIMENSIONS", Message: "thumbnail dimensions exceed cap"}
+	}
+	quality = clampQuality(quality)
+
+	img, inFormat, err := Decode(src)
+	if err != nil {
+		return nil, "", &ErrInvalid{Code: "INVALID_IMAGE", Message: fmt.Sprintf("could not decode image: %v", err)}
+	}
+
+	fmtArg := format
+	if strings.TrimSpace(fmtArg) == "" {
+		fmtArg = "webp"
+	}
+	if fmtArg, err = NormalizeFormat(fmtArg); err != nil {
+		return nil, "", &ErrInvalid{Code: "INVALID_FORMAT", Message: err.Error()}
+	}
+
+	out := imaging.Fill(img, width, height, imaging.Center, imaging.Lanczos)
+	_ = inFormat
+	return Encode(out, fmtArg, quality, cfg)
 }

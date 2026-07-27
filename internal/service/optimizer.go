@@ -92,6 +92,15 @@ func Optimize(src io.Reader, format string, quality int, stripExif bool, cfg con
 			return nil, err
 		}
 		return &OptimizeResult{Bytes: data, ContentType: ct}, nil
+
+	case "avif":
+		if cfg.AvifPath != "" && toolExists(cfg.AvifPath) {
+			out, ct, err := Encode(img, "avif", quality, cfg)
+			if err == nil {
+				return &OptimizeResult{Bytes: out, ContentType: ct}, nil
+			}
+		}
+		return fallbackJPEG(img, quality, inFormat)
 	}
 	return nil, fmt.Errorf("optimize: unreachable format %q", outFormat)
 }
