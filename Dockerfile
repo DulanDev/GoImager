@@ -8,7 +8,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o goImager ./cmd/server
 
 # Runtime stage
 FROM alpine:3.19
-RUN apk --no-cache add ca-certificates pngquant mozjpeg libwebp-tools
+RUN apk --no-cache add ca-certificates pngquant mozjpeg libwebp-tools libavif-apps
 WORKDIR /root/
 COPY --from=builder /app/goImager .
 EXPOSE 8080

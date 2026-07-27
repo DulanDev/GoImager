@@ -17,7 +17,7 @@ jobs:
       - name: Install dependencies
         run: go mod download
       - name: Install optimizer tools
-        run: sudo apt-get update && sudo apt-get install -y pngquant webp libjpeg-turbo-progs
+        run: sudo apt-get update && sudo apt-get install -y pngquant webp libjpeg-turbo-progs libavif-bin
       - name: Vet
         run: go vet ./...
       - name: Test
