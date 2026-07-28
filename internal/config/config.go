@@ -12,13 +12,49 @@ import (
 )
 
 type Config struct {
-	Server    Server     `yaml:"server"`
-	Quality   Quality    `yaml:"quality"`
-	Auth      Auth       `yaml:"auth"`
-	RateLimit RateLimit  `yaml:"rate_limit"`
-	Optimizer Optimizer  `yaml:"optimizer"`
-	Logging   Logging    `yaml:"logging"`
-	Allowed   []string   `yaml:"allowed_domains"`
+	Server    Server         `yaml:"server"`
+	Quality   Quality        `yaml:"quality"`
+	Auth      Auth           `yaml:"auth"`
+	RateLimit RateLimit      `yaml:"rate_limit"`
+	Optimizer Optimizer      `yaml:"optimizer"`
+	Logging   Logging        `yaml:"logging"`
+	Allowed   allowedDomains `yaml:"allowed_domains"`
+}
+
+// allowedDomains is a yaml unmarshaler-tolerant wrapper: accepts either a
+// scalar string ("*" or "a.com,b.com") or a YAML list, normalizing to a
+// []string. Used only during yaml parsing; env-var path bypasses this.
+type allowedDomains []string
+
+func (a *allowedDomains) UnmarshalYAML(value *yaml.Node) error {
+	var single string
+	if err := value.Decode(&single); err == nil {
+		*a = parseAllowedDomains(single)
+		return nil
+	}
+	var list []string
+	if err := value.Decode(&list); err != nil {
+		return err
+	}
+	*a = list
+	return nil
+}
+
+// parseAllowedDomains turns a scalar string into a []string exactly like the
+// existing env-var path does: "*" -> ["*"], "a,b" -> ["a","b"].
+func parseAllowedDomains(s string) []string {
+	s = strings.TrimSpace(s)
+	if s == "" || s == "*" {
+		return []string{"*"}
+	}
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		if t := strings.TrimSpace(p); t != "" {
+			out = append(out, t)
+		}
+	}
+	return out
 }
 
 type Server struct {
@@ -32,7 +68,23 @@ type Quality struct {
 }
 
 type Auth struct {
-	APIKey string `yaml:"api_key"`
+	APIKey      string   `yaml:"api_key"`
+	SigningKey  string   `yaml:"signing_key"`
+	SigningKeys []string `yaml:"signing_keys"`
+}
+
+// SigningKeysList returns the active signing-key list for /process URL
+// verification. SIGNING_KEYS (env) / signing_keys (yaml) take precedence over
+// the single SIGNING_KEY / signing_key value. Empty / nil result means signing
+// is disabled and /process is open.
+func (a Auth) SigningKeysList() []string {
+	if len(a.SigningKeys) > 0 {
+		return a.SigningKeys
+	}
+	if a.SigningKey != "" {
+		return []string{a.SigningKey}
+	}
+	return nil
 }
 
 type RateLimit struct {
@@ -96,6 +148,16 @@ func applyEnv(c *Config) {
 	envInt("MAX_DIMENSION", &c.Server.MaxDimension)
 	envInt("DEFAULT_QUALITY", &c.Quality.Default)
 	envStr("API_KEY", &c.Auth.APIKey)
+	envStr("SIGNING_KEY", &c.Auth.SigningKey)
+	if v, ok := os.LookupEnv("SIGNING_KEYS"); ok && v != "" {
+		parts := strings.Split(v, ",")
+		c.Auth.SigningKeys = nil
+		for _, p := range parts {
+			if t := strings.TrimSpace(p); t != "" {
+				c.Auth.SigningKeys = append(c.Auth.SigningKeys, t)
+			}
+		}
+	}
 	envInt("RATE_LIMIT_RPS", &c.RateLimit.RPS)
 	envInt("RATE_LIMIT_RPM", &c.RateLimit.RPM)
 	envStr("LOG_LEVEL", &c.Logging.Level)
@@ -103,7 +165,7 @@ func applyEnv(c *Config) {
 	envStr("OPTIMIZER_PNGQUANT_PATH", &c.Optimizer.PngquantPath)
 	envStr("OPTIMIZER_MOZJPEG_PATH", &c.Optimizer.MozjpegPath)
 	envStr("OPTIMIZER_CWEBP_PATH", &c.Optimizer.CwebpPath)
-envStr("OPTIMIZER_AVIF_PATH", &c.Optimizer.AvifPath)
+	envStr("OPTIMIZER_AVIF_PATH", &c.Optimizer.AvifPath)
 	if v, ok := os.LookupEnv("ALLOWED_DOMAINS"); ok {
 		if v == "*" {
 			c.Allowed = []string{"*"}
