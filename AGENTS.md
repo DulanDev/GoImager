@@ -58,7 +58,9 @@ placeholder dirs — do not assume they hold code.
   `MaxDimCap = 100000` to reject oversized source images.
 - WebP output requires `cwebp` on PATH (bundled in the Docker image). Without
   it, resize/convert/optimize with `format=webp` falls back to JPEG.
-- `Optimizer` config CLI paths default to `pngquant` / `cjpeg` / `cwebp`.
-  Missing tools downgrade optimization but never crash the service.
-- Spec doc: `specs/product-specs.md`. v1.1+ items (auth, ratelimit, /process,
-  /thumbnail) are intentionally not implemented yet — follow the roadmap there.
+- `Optimizer` config CLI paths default to `pngquant` / `cjpeg` / `cwebp` /
+  `avifenc`. Missing tools downgrade optimization but never crash the service.
+- Spec doc: `specs/product-specs.md`. v1.0 (stable) and v1.1 (developer
+  experience: auth, ratelimit, /process, /thumbnail, AVIF, X-Processing-Time)
+  are implemented. v1.2+ items are not built yet — follow roadmap there.
+- User-facing docs: `README.md` — API reference, quick start, config table.
