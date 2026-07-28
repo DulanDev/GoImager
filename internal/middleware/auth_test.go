@@ -26,6 +26,16 @@ func TestAuthHealthBypass(t *testing.T) {
 	}
 }
 
+func TestAuthProcessBypass(t *testing.T) {
+	h := Auth("secret", okHandler())
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/process?src=x", nil)
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Errorf("/process should bypass Bearer auth (governed by Sign), got %d", rec.Code)
+	}
+}
+
 func TestAuthRejectsMissing(t *testing.T) {
 	h := Auth("secret", okHandler())
 	rec := httptest.NewRecorder()

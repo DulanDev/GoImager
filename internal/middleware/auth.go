@@ -7,9 +7,11 @@ import (
 )
 
 // Auth enforces an API key supplied via the Authorization: Bearer <key>
-// header on all requests. The path /health (and root "/") is always
-// allowed so orchestrators can probe without credentials. When apiKey
-// is empty, every request is allowed (auth disabled).
+// header on POST/admin endpoints. Paths /health, / (root), and /process are
+// always allowed: /health and / so orchestrators can probe without
+// credentials, /process because it is governed separately by Sign (signed
+// URL verification) and may also run open when SIGNING_KEY is unset. When
+// apiKey is empty, every request is allowed (auth disabled).
 func Auth(apiKey string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if apiKey == "" || publicAuthPath(r.URL.Path) {
@@ -32,7 +34,7 @@ func Auth(apiKey string, next http.Handler) http.Handler {
 }
 
 func publicAuthPath(p string) bool {
-	return p == "/health" || p == "/"
+	return p == "/health" || p == "/" || p == "/process"
 }
 
 func extractBearer(r *http.Request) string {

@@ -1,6 +1,9 @@
 ### Variables
 @baseUrl = http://localhost:8080
-@testImage = ./test/fixtures/sample.jpg
+@testImage = ./test/fixtures/sample.JPG
+# Set to match your server's API_KEY env var or goimager.yaml auth.api_key.
+# Leave blank if API_KEY is unset (open mode on a trusted network).
+@apiKey = foo
 
 ### -------------------------------------------------------------------
 ### GET /
@@ -18,23 +21,22 @@ Accept: application/json
 
 ### -------------------------------------------------------------------
 ### GET /info
-### Get image metadata (multipart form)
+### Semantically allowed (router accepts GET+POST) but most HTTP clients
+### (including VSCode REST Client and curl by default) strip the request
+### body on GET — and with no body there is nothing to parse. Use the
+### POST /info block below for actual metadata requests.
 ### -------------------------------------------------------------------
 GET {{baseUrl}}/info
-Content-Type: multipart/form-data; boundary=----boundary
-
-------boundary
-Content-Disposition: form-data; name="image"; filename="sample.jpg"
-Content-Type: image/jpeg
-
-< {{testImage}}
-------boundary--
+Authorization: Bearer {{apiKey}}
+Accept: application/json
 
 ### -------------------------------------------------------------------
 ### POST /info
-### Get image metadata (same handler, POST allowed)
+### Get image metadata (multipart form) — preferred over GET /info above
+### When API_KEY is set, add: Authorization: Bearer your-api-key
 ### -------------------------------------------------------------------
 POST {{baseUrl}}/info
+Authorization: Bearer {{apiKey}}
 Content-Type: multipart/form-data; boundary=----boundary
 
 ------boundary
@@ -49,6 +51,7 @@ Content-Type: image/jpeg
 ### Resize image — fit mode (default), width=400, height=300
 ### -------------------------------------------------------------------
 POST {{baseUrl}}/resize
+Authorization: Bearer {{apiKey}}
 Content-Type: multipart/form-data; boundary=----boundary
 
 ------boundary
@@ -82,6 +85,7 @@ Content-Disposition: form-data; name="quality"
 ### POST /resize — fill mode, WebP output
 ### -------------------------------------------------------------------
 POST {{baseUrl}}/resize
+Authorization: Bearer {{apiKey}}
 Content-Type: multipart/form-data; boundary=----boundary
 
 ------boundary
@@ -115,6 +119,7 @@ Content-Disposition: form-data; name="quality"
 ### POST /resize — stretch mode, auto-width (0), PNG output
 ### -------------------------------------------------------------------
 POST {{baseUrl}}/resize
+Authorization: Bearer {{apiKey}}
 Content-Type: multipart/form-data; boundary=----boundary
 
 ------boundary
@@ -145,6 +150,7 @@ png
 ### Convert image to PNG
 ### -------------------------------------------------------------------
 POST {{baseUrl}}/convert
+Authorization: Bearer {{apiKey}}
 Content-Type: multipart/form-data; boundary=----boundary
 
 ------boundary
@@ -166,6 +172,7 @@ Content-Disposition: form-data; name="quality"
 ### POST /convert — to WebP
 ### -------------------------------------------------------------------
 POST {{baseUrl}}/convert
+Authorization: Bearer {{apiKey}}
 Content-Type: multipart/form-data; boundary=----boundary
 
 ------boundary
@@ -184,6 +191,7 @@ webp
 ### Optimize image (default quality 80, strip EXIF)
 ### -------------------------------------------------------------------
 POST {{baseUrl}}/optimize
+Authorization: Bearer {{apiKey}}
 Content-Type: multipart/form-data; boundary=----boundary
 
 ------boundary
@@ -201,6 +209,7 @@ jpeg
 ### POST /optimize — quality=75, preserve EXIF
 ### -------------------------------------------------------------------
 POST {{baseUrl}}/optimize
+Authorization: Bearer {{apiKey}}
 Content-Type: multipart/form-data; boundary=----boundary
 
 ------boundary
@@ -221,3 +230,48 @@ Content-Disposition: form-data; name="strip_exif"
 
 false
 ------boundary--
+
+### -------------------------------------------------------------------
+### POST /thumbnail
+### Center-crop thumbnail, 300x300, WebP output
+### -------------------------------------------------------------------
+POST {{baseUrl}}/thumbnail
+Authorization: Bearer {{apiKey}}
+Content-Type: multipart/form-data; boundary=----boundary
+
+------boundary
+Content-Disposition: form-data; name="image"; filename="sample.jpg"
+Content-Type: image/jpeg
+
+< {{testImage}}
+------boundary
+Content-Disposition: form-data; name="width"
+
+300
+------boundary
+Content-Disposition: form-data; name="height"
+
+300
+------boundary
+Content-Disposition: form-data; name="format"
+
+webp
+------boundary--
+
+### -------------------------------------------------------------------
+### GET /process — unsigned (only works when SIGNING_KEY is empty;
+## the server is on a private network / open-by-default). For signed
+## usage, generate a URL with `go run ./cmd/gensig -key=<your-key>
+## -exp=24h 'src=...&w=...'` and paste it below.
+### -------------------------------------------------------------------
+# Example unsigned (dev / trusted-network only):
+GET {{baseUrl}}/process?src=https%3A%2F%2Fexample.com%2Fphoto.jpg&w=800&format=webp&q=80
+Accept: image/webp
+
+### -------------------------------------------------------------------
+### GET /process — signed (sample; sig/exp become invalid over time.
+## Regenerate with: go run ./cmd/gensig -key=$SIGNING_KEY -exp=24h
+## 'src=https%3A%2F%2Fexample.com%2Fphoto.jpg&w=800&format=webp&q=80'
+### -------------------------------------------------------------------
+# GET {{baseUrl}}/process?src=...&w=800&format=webp&q=80&exp=1700000000&sig=REPLACE_ME
+# Accept: image/webp

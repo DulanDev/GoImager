@@ -8,8 +8,7 @@ import (
 )
 
 func (s *Server) Thumbnail(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseMultipartForm(s.maxBytes()); err != nil {
-		writeError(w, http.StatusBadRequest, "PAYLOAD_TOO_LARGE", "request body exceeds max file size")
+	if !s.parseMultipartForm(w, r) {
 		return
 	}
 	file, _, err := r.FormFile("image")

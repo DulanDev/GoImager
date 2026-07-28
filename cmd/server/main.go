@@ -41,7 +41,9 @@ func main() {
 	r.HandleFunc("/convert", srv.Convert).Methods("POST")
 	r.HandleFunc("/optimize", srv.Optimize).Methods("POST")
 	r.HandleFunc("/thumbnail", srv.Thumbnail).Methods("POST")
-	r.HandleFunc("/process", srv.Process).Methods("GET")
+	// /process is governed by Sign (HMAC-signed URLs), not the global
+	// Bearer API_KEY middleware — see Authentication Model in specs.
+	r.Handle("/process", middleware.VerifySign(cfg.Auth.SigningKeysList(), http.HandlerFunc(srv.Process))).Methods("GET")
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("GoImager"))
 	}).Methods("GET")
