@@ -1,0 +1,398 @@
+openapi: 3.0.3
+info:
+  title: GoImager API
+  version: 1.1.1
+  description: |
+    Self-hosted, privacy-first image processing microservice written in Go.
+    Lightweight open-source alternative to Cloudinary/imgix — no SaaS fees,
+    no vendor lock-in, full data control.
+
+    ### Authentication
+    Two independent mechanisms (both off by default):
+      - `API_KEY` (Bearer header) on POST endpoints (`/resize`, `/convert`,
+        `/optimize`, `/thumbnail`, `/info`).
+      - `SIGNING_KEY` / `SIGNING_KEYS` (HMAC-SHA256 signed URLs) on
+        `GET /process`.
+    Empty secret = open (private-network mode). See the README Authentication
+    section for signing reference snippets in Go and JavaScript.
+  contact:
+    url: https://github.com/DulanDev/GoImager
+  license:
+    name: MIT
+    url: https://github.com/DulanDev/GoImager/blob/main/LICENSE
+servers:
+  - url: http://localhost:8080
+    description: Local dev server
+tags:
+  - name: health
+    description: Service health
+  - name: metadata
+    description: Image metadata extraction
+  - name: transform
+    description: Image transformations (upload)
+  - name: process
+    description: URL-parameter transformation (browser-direct)
+paths:
+  /health:
+    get:
+      tags: [health]
+      summary: Health check
+      description: Returns service status and version — public, bypasses auth.
+      security: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+  /info:
+    get:
+      tags: [metadata]
+      summary: Get image metadata (GET)
+      description: |
+        Router accepts GET or POST, but most HTTP clients (VSCode REST Client,
+        curl default) strip the body on GET, so POST is preferred.
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: "#/components/requestBodies/InfoRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/InfoOk"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [metadata]
+      summary: Get image metadata (POST, preferred)
+      description: Inspects an uploaded image and returns dimensions, format, size, color model, and EXIF metadata without performing any transformation.
+      security:
+        - bearerAuth: []
+      requestBody:
+        $ref: "#/components/requestBodies/InfoRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/InfoOk"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /resize:
+    post:
+      tags: [transform]
+      summary: Resize an image
+      description: |
+        At least one of `width` or `height` must be non-zero. When `format`
+        is omitted the input format is preserved. Max dimension 10,000px;
+        max upload size configurable (default 20MB).
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image, width, height]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                width:
+                  type: integer
+                  minimum: 0
+                  description: Target width in pixels. 0 = auto-scale.
+                height:
+                  type: integer
+                  minimum: 0
+                  description: Target height in pixels. 0 = auto-scale.
+                mode:
+                  type: string
+                  enum: [fit, fill, stretch]
+                  default: fit
+                format:
+                  type: string
+                  enum: [jpeg, png, webp, avif, gif]
+                quality:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 85
+      responses:
+        "200":
+          $ref: "#/components/responses/ImageBinary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /convert:
+    post:
+      tags: [transform]
+      summary: Convert an image to a different format
+      description: "Decodes the uploaded image and re-encodes it in the requested target format, optionally at a given quality. Output formats: JPEG, PNG, WebP, AVIF, GIF."
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image, format]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                format:
+                  type: string
+                  enum: [jpeg, png, webp, avif, gif]
+                quality:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 85
+      responses:
+        "200":
+          $ref: "#/components/responses/ImageBinary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /optimize:
+    post:
+      tags: [transform]
+      summary: Optimize an image for web delivery
+      description: |
+        Per-format compression strategy: `pngquant` on PNG, `mozjpeg` `cjpeg`
+        on JPEG, `cwebp` on WebP, Go re-encode fallback otherwise. All paths
+        strip EXIF on decode. External binaries are bundled in the Docker
+        image; missing tools downgrade optimization but never crash.
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                quality:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 80
+                strip_exif:
+                  type: boolean
+                  default: true
+                format:
+                  type: string
+                  enum: [jpeg, png, webp, avif, gif]
+                  description: "Output override (default: same as input)."
+      responses:
+        "200":
+          description: Optimized image binary.
+          headers:
+            X-Original-Size:
+              schema: { type: string }
+              description: Source size in bytes.
+            X-Optimized-Size:
+              schema: { type: string }
+              description: Optimized size in bytes.
+            X-Reduction-Percent:
+              schema: { type: string }
+              description: Reduction percentage (float).
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/png: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+            image/gif: { schema: { type: string, format: binary } }
+            image/avif: { schema: { type: string, format: binary } }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /thumbnail:
+    post:
+      tags: [transform]
+      summary: Fixed-size center-crop thumbnail
+      description: |
+        Always crops from the geometric center. No content-aware / smart crop
+        in v1.x.
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image, width, height]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                width:
+                  type: integer
+                  minimum: 1
+                height:
+                  type: integer
+                  minimum: 1
+                format:
+                  type: string
+                  enum: [jpeg, png, webp, avif, gif]
+                  default: webp
+                quality:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 85
+      responses:
+        "200":
+          $ref: "#/components/responses/ImageBinary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /process:
+    get:
+      tags: [process]
+      summary: URL-parameter image transformation
+      description: |
+        Fetches a remote `src` image and returns the transformed binary,
+        ready for direct use in `<img src="...">`. The `src` host must appear
+        in the `ALLOWED_DOMAINS` allowlist (`*` allows any).
+
+        **Signed URLs.** When `SIGNING_KEY` (or `SIGNING_KEYS`) is set, every
+        `/process` request must carry `exp` (Unix timestamp) and `sig`
+        (hex HMAC-SHA256). The server recomputes
+        `HMAC-SHA256(key, "/process?" + sorted_query_without_sig)` and rejects
+        mismatches with `401`; expired `exp` returns `410 Gone`. When signing
+        is disabled (`SIGNING_KEY` empty) the request is open.
+      security:
+        - hmacQuery: []
+        - {}
+      parameters:
+        - { name: src, in: query, required: true, schema: { type: string, format: uri }, description: URL of the source image (URL-encoded). }
+        - { name: w, in: query, schema: { type: integer, minimum: 0 }, description: Target width. }
+        - { name: h, in: query, schema: { type: integer, minimum: 0 }, description: Target height. }
+        - { name: mode, in: query, schema: { type: string, enum: [fit, fill, stretch], default: fit } }
+        - { name: format, in: query, schema: { type: string, enum: [jpeg, png, webp, avif] } }
+        - { name: q, in: query, schema: { type: integer, minimum: 1, maximum: 100 }, description: Quality 1–100. }
+        - { name: blur, in: query, schema: { type: number, format: float }, description: Gaussian blur radius (e.g. `1.5`). }
+        - { name: sharp, in: query, schema: { type: number, format: float }, description: "Sharpen sigma (e.g. `1.0`)." }
+        - { name: rotate, in: query, schema: { type: integer, enum: [90, 180, 270] } }
+        - { name: flip, in: query, schema: { type: string, enum: [h, v] }, description: "`h` (horizontal) or `v` (vertical)." }
+        - { name: exp, in: query, schema: { type: integer }, description: "(signed mode only) Expiry as Unix timestamp. Required when `SIGNING_KEY` is set." }
+        - { name: sig, in: query, schema: { type: string }, description: "(signed mode only) HMAC-SHA256 hex signature. Required when `SIGNING_KEY` is set." }
+      responses:
+        "200":
+          $ref: "#/components/responses/ImageBinary"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "410":
+          description: Signed URL expired (`exp` is in the past).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+components:
+  schemas:
+    Health:
+      type: object
+      properties:
+        status: { type: string, example: ok }
+        version: { type: string, example: 1.1.0 }
+    Info:
+      type: object
+      properties:
+        width: { type: integer, example: 1920 }
+        height: { type: integer, example: 1080 }
+        format: { type: string, example: jpeg }
+        size_bytes: { type: integer, example: 204800 }
+        color_model: { type: string, example: YCbCr }
+        exif: { $ref: "#/components/schemas/Exif" }
+    Exif:
+      type: object
+      nullable: true
+      properties:
+        camera: { type: string, example: "Sony A7 IV", nullable: true }
+        taken_at: { type: string, format: date-time, nullable: true }
+        gps:
+          type: object
+          nullable: true
+          properties:
+            lat: { type: number, format: double }
+            lng: { type: number, format: double }
+    Error:
+      type: object
+      required: [error, code]
+      properties:
+        error:
+          type: string
+          description: Human-readable description.
+          example: width must be a positive integer
+        code:
+          type: string
+          description: Machine-readable code for clients to switch on.
+          example: INVALID_DIMENSIONS
+  requestBodies:
+    InfoRequest:
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required: [image]
+            properties:
+              image:
+                type: string
+                format: binary
+                description: Image file to inspect.
+  responses:
+    InfoOk:
+      description: Image metadata.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Info" }
+    ImageBinary:
+      description: Transformed image binary.
+      content:
+        image/jpeg: { schema: { type: string, format: binary } }
+        image/png: { schema: { type: string, format: binary } }
+        image/webp: { schema: { type: string, format: binary } }
+        image/gif: { schema: { type: string, format: binary } }
+        image/avif: { schema: { type: string, format: binary } }
+    BadRequest:
+      description: |
+        Malformed request — missing field, invalid value, oversized payload,
+        malformed multipart body, or `src` host not in allowlist. See `code`
+        for the specific failure.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    Unauthorized:
+      description: |
+        Missing or invalid `Authorization: Bearer <key>` (POST endpoints) or
+        missing/invalid `sig` (signed `/process`).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        Static API key sent as `Authorization: Bearer <API_KEY>`. Applies to
+        POST endpoints. Empty `API_KEY` = auth disabled.
+    hmacQuery:
+      type: apiKey
+      in: query
+      name: sig
+      description: |
+        HMAC-SHA256 signature over `/process?` + canonical query string,
+        paired with the `exp` query parameter. Set `SIGNING_KEY` (or
+        `SIGNING_KEYS`) on the server to enable. Empty secrets = `/process`
+        open. Consult the README Authentication section for canonicalisation
+        rules and Go/JavaScript reference signing snippets.

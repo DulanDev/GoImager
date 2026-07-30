@@ -33,7 +33,37 @@ go mod tidy
 go run cmd/server/main.go
 ```
 
-Server listens on `http://localhost:8080` by default.
+Server listens on `http://localhost:8080` by default. Interactive API docs
+(Swagger UI) are served by the running binary at
+[`http://localhost:8080/docs`](http://localhost:8080/docs) — no external
+tooling required. Raw spec: `/openapi.yaml` (YAML) or `/openapi.json` (JSON).
+
+## API Docs
+
+The OpenAPI 3.0.3 spec lives at [`api/openapi.yaml`](api/openapi.yaml) and is
+embedded into the binary at build time. At runtime:
+
+- `/docs` — interactive Swagger UI (vendored, served offline).
+- `/openapi.yaml` — raw spec, `Content-Type: application/yaml`.
+- `/openapi.json` — JSON conversion (`Accept: application/json` or `/openapi.json`).
+
+OpenAPI docs are public — they bypass `API_KEY` and signed-URL auth, just
+like `/health`. The Swagger UI assets are bundled in the binary (~3 MB) so
+GoImager keeps working fully offline (matches the project's
+"offline support: Yes" positioning).
+
+### Local lint of the spec
+
+The spec is checked with [Spectral](https://stoplight.io/open-source/spectral)
+against the standard OAS ruleset:
+
+```sh
+npx @stoplight/spectral-cli@6.14.1 lint api/openapi.yaml
+```
+
+Configuration lives in [`.spectral.yaml`](.spectral.yaml). The `operationId`
+rule is disabled — the spec relies on path + method combinations as
+canonical operation identities.
 
 ### Docker
 

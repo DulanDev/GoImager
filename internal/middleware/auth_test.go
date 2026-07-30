@@ -36,6 +36,27 @@ func TestAuthProcessBypass(t *testing.T) {
 	}
 }
 
+func TestAuthDocsBypass(t *testing.T) {
+	h := Auth("secret", okHandler())
+	cases := []string{
+		"/openapi.yaml",
+		"/openapi.json",
+		"/docs",
+		"/docs/",
+		"/docs/swagger-ui.css",
+		"/docs/swagger-ui-bundle.js",
+		"/docs/favicon.ico",
+	}
+	for _, p := range cases {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, p, nil)
+		h.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Errorf("path %q should bypass Bearer auth, got %d", p, rec.Code)
+		}
+	}
+}
+
 func TestAuthRejectsMissing(t *testing.T) {
 	h := Auth("secret", okHandler())
 	rec := httptest.NewRecorder()

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GoImager — API Reference</title>
+    <link rel="stylesheet" href="/docs/swagger-ui.css" />
+    <style>
+      body { margin: 0; }
+    </style>
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="/docs/swagger-ui-bundle.js" charset="UTF-8"></script>
+    <script>
+      window.onload = () => {
+        window.ui = SwaggerUIBundle({
+          url: "/openapi.json",
+          dom_id: "#swagger-ui",
+          deepLinking: true,
+          docExpansion: "none",
+          operationsSorter: "alpha",
+          tagsSorter: "alpha",
+          persistAuth: true,
+          displayRequestDuration: true,
+          filter: true,
+          showExtensions: true,
+          showCommonExtensions: true,
+        });
+      };
+    </script>
+  </body>
+</html>

@@ -7,11 +7,14 @@ import (
 )
 
 // Auth enforces an API key supplied via the Authorization: Bearer <key>
-// header on POST/admin endpoints. Paths /health, / (root), and /process are
-// always allowed: /health and / so orchestrators can probe without
-// credentials, /process because it is governed separately by Sign (signed
-// URL verification) and may also run open when SIGNING_KEY is unset. When
-// apiKey is empty, every request is allowed (auth disabled).
+// header on POST/admin endpoints. The following paths are always allowed so
+// orchestrators / operators / browsers can reach metadata without an API
+// key:
+//   - /health, /             service identity + liveness probes
+//   - /process               governed separately by Sign (signed URLs)
+//   - /openapi.yaml, /openapi.json, /docs/*   API spec + Swagger UI
+//
+// When apiKey is empty, every request is allowed (auth disabled).
 func Auth(apiKey string, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if apiKey == "" || publicAuthPath(r.URL.Path) {
@@ -34,7 +37,11 @@ func Auth(apiKey string, next http.Handler) http.Handler {
 }
 
 func publicAuthPath(p string) bool {
-	return p == "/health" || p == "/" || p == "/process"
+	switch p {
+	case "/health", "/", "/process", "/openapi.yaml", "/openapi.json":
+		return true
+	}
+	return strings.HasPrefix(p, "/docs/") || p == "/docs"
 }
 
 func extractBearer(r *http.Request) string {

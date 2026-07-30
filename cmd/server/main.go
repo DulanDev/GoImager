@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/DulanDev/GoImager/api"
 	"github.com/DulanDev/GoImager/internal/config"
 	"github.com/DulanDev/GoImager/internal/handler"
 	"github.com/DulanDev/GoImager/internal/middleware"
@@ -25,7 +27,7 @@ func main() {
 	log.Info("starting GoImager", "port", cfg.Server.Port, "version", handler.Version)
 	warnMissingTools(&cfg, log)
 
-	srv := handler.New(cfg, log)
+	srv := handler.New(cfg, log, api.OpenAPIYAML, sub(api.UIFS, "ui"))
 	r := mux.NewRouter()
 
 	rl := middleware.NewRateLimiter(cfg.RateLimit.RPS, cfg.RateLimit.RPM)
@@ -47,6 +49,9 @@ func main() {
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("GoImager"))
 	}).Methods("GET")
+	r.HandleFunc("/openapi.yaml", srv.OpenAPI).Methods("GET")
+	r.HandleFunc("/openapi.json", srv.OpenAPI).Methods("GET")
+	r.PathPrefix("/docs").Handler(srv.SwaggerUI()).Methods("GET")
 
 	addr := ":" + cfg.Server.Port
 	log.Info("listening", "addr", addr)
@@ -54,6 +59,16 @@ func main() {
 		log.Error("server stopped", "err", err)
 		os.Exit(1)
 	}
+}
+
+// sub returns fsys rooted at dir, or nil if dir is absent. Used so we
+// never serve the embed.FS root (which exposes both openapi.yaml and ui/).
+func sub(fsys fs.FS, dir string) fs.FS {
+	out, err := fs.Sub(fsys, dir)
+	if err != nil {
+		return nil
+	}
+	return out
 }
 
 func warnMissingTools(cfg *config.Config, log *slog.Logger) {

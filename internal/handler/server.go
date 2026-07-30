@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"time"
@@ -10,18 +11,20 @@ import (
 )
 
 type Server struct {
-	Cfg        config.Config
-	Log        *slog.Logger
-	HTTPClient *http.Client
+	Cfg          config.Config
+	Log          *slog.Logger
+	HTTPClient   *http.Client
+	OpenAPIYAML  []byte // embedded api/openapi.yaml; nil = openapi disabled
+	UIFS         fs.FS  // embedded api/ui subtree; nil = /docs 404
 }
 
-func New(cfg config.Config, log *slog.Logger) *Server {
+func New(cfg config.Config, log *slog.Logger, openapiYAML []byte, uiFS fs.FS) *Server {
 	return &Server{
-		Cfg: cfg,
-		Log: log,
-		HTTPClient: &http.Client{
-			Timeout: 20 * time.Second,
-		},
+		Cfg:         cfg,
+		Log:         log,
+		HTTPClient:  &http.Client{Timeout: 20 * time.Second},
+		OpenAPIYAML: openapiYAML,
+		UIFS:        uiFS,
 	}
 }
 
