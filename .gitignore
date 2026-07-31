@@ -1,5 +1,23 @@
-.env
-goimager.yaml
+# build / commit artefacts
+/server
+/goImager
+/dist
+/bin
 coverage.out
 *.out
-goImager
+*.test
+*.prof
+
+# local config / secrets
+.env
+.env.*
+goimager.yaml
+
+# editor / OS detritus
+.DS_Store
+*.swp
+*~
+*.tmp
+*.bak
+.idea/
+.vscode/

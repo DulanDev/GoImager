@@ -1,0 +1,43 @@
+# Build artefacts and local binaries
+server
+goImager
+dist
+bin
+*.out
+*.test
+*.prof
+coverage.out
+
+# VCS / CI
+.git
+.gitignore
+.github
+.gitattributes
+
+# Docs / specs / planning
+*.md
+specs/
+plans/
+api.http
+api/ui/*.map
+.spectral.yaml
+AGENTS.md
+
+# Local config / secrets
+.env
+.env.*
+goimager.yaml
+goimager.example.yaml
+
+# Build files themselves (don't copy into builder context)
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Editor / OS detritus
+.DS_Store
+*.swp
+*~
+*.tmp
+.idea/
+.vscode/
