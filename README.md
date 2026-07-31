@@ -99,7 +99,7 @@ All non-binary errors return structured JSON:
 { "status": "ok", "version": "1.0.0" }
 ```
 
-### `GET|POST /info`
+### `POST /info`
 
 `multipart/form-data`, field `image` → metadata, no transformation.
 

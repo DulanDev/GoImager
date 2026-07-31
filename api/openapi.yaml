@@ -47,26 +47,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/Health"
   /info:
-    get:
-      tags: [metadata]
-      summary: Get image metadata (GET)
-      description: |
-        Router accepts GET or POST, but most HTTP clients (VSCode REST Client,
-        curl default) strip the body on GET, so POST is preferred.
-      security:
-        - bearerAuth: []
-      requestBody:
-        $ref: "#/components/requestBodies/InfoRequest"
-      responses:
-        "200":
-          $ref: "#/components/responses/InfoOk"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
     post:
       tags: [metadata]
-      summary: Get image metadata (POST, preferred)
+      summary: Get image metadata
       description: Inspects an uploaded image and returns dimensions, format, size, color model, and EXIF metadata without performing any transformation.
       security:
         - bearerAuth: []

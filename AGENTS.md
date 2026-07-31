@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Compact guidance for OpenCode sessions working in this repo.
+Compact guidance for working in this repo.
 
 ## Project
 
@@ -33,7 +33,7 @@ placeholder dirs — do not assume they hold code.
   `godotenv`, never fatal when absent.
 - `internal/handler/` — handlers on `*Server`. `server.go` holds config + log +
   shared `writeError`. Endpoints: `health.go`(GET /health, constant Version),
-  `info.go`(GET/POST /info), `resize.go`, `convert.go`, `optimize.go`.
+  `info.go`(POST /info), `resize.go`, `convert.go`, `optimize.go`.
   All errors return structured JSON `{ "error", "code" }`.
 - `internal/service/imageprocessor.go` — `ResizeImage` (modes fit/fill/stretch,
   dims validated, 0=auto, format passthrough when blank), `ConvertImage`,
@@ -60,7 +60,23 @@ placeholder dirs — do not assume they hold code.
   it, resize/convert/optimize with `format=webp` falls back to JPEG.
 - `Optimizer` config CLI paths default to `pngquant` / `cjpeg` / `cwebp` /
   `avifenc`. Missing tools downgrade optimization but never crash the service.
-- Spec doc: `specs/product-specs.md`. v1.0 (stable) and v1.1 (developer
-  experience: auth, ratelimit, /process, /thumbnail, AVIF, X-Processing-Time)
-  are implemented. v1.2+ items are not built yet — follow roadmap there.
 - User-facing docs: `README.md` — API reference, quick start, config table.
+
+## Changing the API
+
+When you add, remove, or change a route (path, method, request/response
+shape, auth), update **all** of these in the same changeset:
+
+1. **Route registration** — `cmd/server/main.go` (the `HandleFunc` calls).
+2. **OpenAPI spec** — `api/openapi.yaml` (path, schema, security). The
+   Swagger UI (`/docs`) serves from this file.
+3. **REST Client examples** — `api.http` request blocks.
+4. **`README.md`** — API reference section and any prose that names the
+   endpoint (e.g. the auth table).
+5. **`internal/handler/*_test.go`** — any route registration that mirrors
+   `main.go` (e.g. `v11_test.go`).
+6. **`AGENTS.md`** — the handler summary line and any endpoint lists.
+
+To find every mention before editing, grep the changed path across the
+repo (e.g. `/info`) in `*.go`, `*.yaml`, `*.yml`, `*.md`, `*.http`,
+`*.json`. Do not assume a path is mentioned only once.

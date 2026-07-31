@@ -38,7 +38,7 @@ func main() {
 	r.Use(middleware.RequestLogger(log))
 
 	r.HandleFunc("/health", srv.Health).Methods("GET")
-	r.HandleFunc("/info", srv.Info).Methods("GET", "POST")
+	r.HandleFunc("/info", srv.Info).Methods("POST")
 	r.HandleFunc("/resize", srv.Resize).Methods("POST")
 	r.HandleFunc("/convert", srv.Convert).Methods("POST")
 	r.HandleFunc("/optimize", srv.Optimize).Methods("POST")

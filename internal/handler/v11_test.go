@@ -125,7 +125,7 @@ func TestAuthMiddlewareBlocksRoute(t *testing.T) {
 			next.ServeHTTP(w, req)
 		})
 	})
-	r.HandleFunc("/info", srv.Info).Methods("GET", "POST")
+	r.HandleFunc("/info", srv.Info).Methods("POST")
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/info", nil)
 	r.ServeHTTP(rec, req)

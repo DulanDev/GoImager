@@ -20,19 +20,8 @@ GET {{baseUrl}}/health
 Accept: application/json
 
 ### -------------------------------------------------------------------
-### GET /info
-### Semantically allowed (router accepts GET+POST) but most HTTP clients
-### (including VSCode REST Client and curl by default) strip the request
-### body on GET — and with no body there is nothing to parse. Use the
-### POST /info block below for actual metadata requests.
-### -------------------------------------------------------------------
-GET {{baseUrl}}/info
-Authorization: Bearer {{apiKey}}
-Accept: application/json
-
-### -------------------------------------------------------------------
 ### POST /info
-### Get image metadata (multipart form) — preferred over GET /info above
+### Get image metadata (multipart form)
 ### When API_KEY is set, add: Authorization: Bearer your-api-key
 ### -------------------------------------------------------------------
 POST {{baseUrl}}/info
