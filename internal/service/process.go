@@ -5,6 +5,7 @@ import (
 	"image"
 	"image/color"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -56,15 +57,19 @@ func Process(p ProcessParams, cfg config.Config, client *http.Client) ([]byte, s
 		// Mask the underlying error: stdlib http error strings can leak
 		// resolved IPs / internal hostnames, which combined with the
 		// wildcard-allowlist default is an information-disclosure vector.
+		// Log the real cause server-side for operator diagnostics.
+		slog.Default().Debug("src fetch failed", "src", p.Src, "err", err)
 		return nil, "", &ErrInvalid{Code: "SRC_FETCH_FAILED", Message: "failed to fetch source image"}
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
+		slog.Default().Debug("src fetch non-200", "src", p.Src, "status", resp.StatusCode)
 		return nil, "", &ErrInvalid{Code: "SRC_FETCH_FAILED", Message: "failed to fetch source image"}
 	}
 
 	var body bytes.Buffer
 	if _, err := io.Copy(&body, io.LimitReader(resp.Body, int64(cfg.Server.MaxFileSizeMB)<<20)); err != nil {
+		slog.Default().Debug("src read truncated", "src", p.Src, "err", err)
 		return nil, "", &ErrInvalid{Code: "SRC_FETCH_FAILED", Message: "failed to fetch source image"}
 	}
 
