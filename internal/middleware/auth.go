@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"crypto/subtle"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -22,7 +23,11 @@ func Auth(apiKey string, next http.Handler) http.Handler {
 			return
 		}
 		provided := extractBearer(r)
-		if provided != apiKey {
+		// Constant-time compare prevents a timing side-channel that
+		// could leak the key byte-by-byte (gosec G101). A length
+		// mismatch alone is acceptable to reject fast: a caller who
+		// doesn't know the length already lost the side-channel game.
+		if subtle.ConstantTimeCompare([]byte(provided), []byte(apiKey)) != 1 {
 			w.Header().Set("Content-Type", "application/json")
 			w.Header().Set("WWW-Authenticate", "Bearer")
 			w.WriteHeader(http.StatusUnauthorized)
