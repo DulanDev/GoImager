@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/DulanDev/GoImager/internal/config"
+	"github.com/DulanDev/GoImager/internal/service"
 )
 
 type Server struct {
@@ -22,7 +23,7 @@ func New(cfg config.Config, log *slog.Logger, openapiYAML []byte, uiFS fs.FS) *S
 	return &Server{
 		Cfg:         cfg,
 		Log:         log,
-		HTTPClient:  &http.Client{Timeout: 20 * time.Second},
+		HTTPClient:  service.NewSafeHTTPClient(cfg, 20*time.Second),
 		OpenAPIYAML: openapiYAML,
 		UIFS:        uiFS,
 	}

@@ -2,7 +2,6 @@ package service
 
 import (
 	"bytes"
-	"fmt"
 	"image"
 	"image/color"
 	"io"
@@ -47,25 +46,31 @@ func Process(p ProcessParams, cfg config.Config, client *http.Client) ([]byte, s
 	}
 
 	if client == nil {
-		client = &http.Client{Timeout: 20 * time.Second}
+		// SSRF-hardened default: blocks private/reserved destinations
+		// (RFC 1918, link-local, loopback, ULA) and re-applies the
+		// allowlist on every redirect.
+		client = NewSafeHTTPClient(cfg, 20*time.Second)
 	}
 	resp, err := client.Get(p.Src)
 	if err != nil {
-		return nil, "", &ErrInvalid{Code: "SRC_FETCH_FAILED", Message: fmt.Sprintf("fetch src: %v", err)}
+		// Mask the underlying error: stdlib http error strings can leak
+		// resolved IPs / internal hostnames, which combined with the
+		// wildcard-allowlist default is an information-disclosure vector.
+		return nil, "", &ErrInvalid{Code: "SRC_FETCH_FAILED", Message: "failed to fetch source image"}
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, "", &ErrInvalid{Code: "SRC_FETCH_FAILED", Message: fmt.Sprintf("src returned status %d", resp.StatusCode)}
+		return nil, "", &ErrInvalid{Code: "SRC_FETCH_FAILED", Message: "failed to fetch source image"}
 	}
 
 	var body bytes.Buffer
 	if _, err := io.Copy(&body, io.LimitReader(resp.Body, int64(cfg.Server.MaxFileSizeMB)<<20)); err != nil {
-		return nil, "", &ErrInvalid{Code: "SRC_FETCH_FAILED", Message: fmt.Sprintf("read src: %v", err)}
+		return nil, "", &ErrInvalid{Code: "SRC_FETCH_FAILED", Message: "failed to fetch source image"}
 	}
 
 	img, inFormat, err := Decode(&body)
 	if err != nil {
-		return nil, "", &ErrInvalid{Code: "INVALID_IMAGE", Message: fmt.Sprintf("could not decode src: %v", err)}
+		return nil, "", &ErrInvalid{Code: "INVALID_IMAGE", Message: "could not decode src image"}
 	}
 
 	out := applyTransforms(img, p)
