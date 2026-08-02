@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"syscall"
 	"time"
 
 	"github.com/DulanDev/GoImager/internal/config"
@@ -61,37 +62,29 @@ func isBlockedIP(ip net.IP) bool {
 	return false
 }
 
-// safeDialContext resolves the host via the default resolver and rejects
-// any address that resolves (in whole or in part) to a blocked range.
-// This guards against DNS-rebinding: an allowed hostname that points at
-// 169.254.169.254 / 127.0.0.1 is refused at dial time.
+// safeDialContext rejects destinations that resolve (in whole or in part)
+// to a blocked private/reserved range. The check runs in the dialer's
+// ControlContext hook, which fires *after* the OS resolves the hostname but
+// *before* connect() — so an attacker-controlled DNS server that returns a
+// public IP on the first lookup and a metadata IP (169.254.169.254) on the
+// second cannot win (classic DNS-rebinding TOCTOU). Dialing the original
+// host (not the IP literal) preserves TLS SNI for virtual-hosted origins.
 func safeDialContext(ctx context.Context, network, addr string) (net.Conn, error) {
-	host, port, err := net.SplitHostPort(addr)
-	if err != nil {
-		host = addr
-		port = ""
-	}
-
-	// Literal IP — check directly.
-	if literal := net.ParseIP(host); literal != nil {
-		if isBlockedIP(literal) {
-			return nil, errBlockedIP
-		}
-	} else {
-		// Hostname — resolve first, then check every returned address.
-		ips, err := net.DefaultResolver.LookupIPAddr(ctx, host)
-		if err != nil {
-			return nil, err
-		}
-		for _, ip := range ips {
-			if isBlockedIP(ip.IP) {
-				return nil, errBlockedIP
+	d := &net.Dialer{
+		Timeout: 10 * time.Second,
+		ControlContext: func(_ context.Context, _ string, address string, _ syscall.RawConn) error {
+			host, _, err := net.SplitHostPort(address)
+			if err != nil {
+				host = address
 			}
-		}
+			ip := net.ParseIP(host)
+			if ip == nil || isBlockedIP(ip) {
+				return errBlockedIP
+			}
+			return nil
+		},
 	}
-
-	d := &net.Dialer{Timeout: 10 * time.Second}
-	return d.DialContext(ctx, network, net.JoinHostPort(host, port))
+	return d.DialContext(ctx, network, addr)
 }
 
 // safeTransport returns an *http.Transport whose DialContext blocks
