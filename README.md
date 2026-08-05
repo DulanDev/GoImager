@@ -8,6 +8,32 @@ A self-hosted, privacy-first image processing microservice written in Go.
 Lightweight open-source alternative to Cloudinary/imgix - no SaaS fees, no
 vendor lock-in, full data control.
 
+## Table of Contents
+
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [API Docs](#api-docs)
+  - [Local lint of the spec](#local-lint-of-the-spec)
+  - [Docker](#docker)
+  - [Local optimizer tools](#local-optimizer-tools-optional-for-native-dev)
+- [API](#api)
+  - [`GET /health`](#get-health)
+  - [`POST /info`](#post-info)
+  - [`POST /resize`](#post-resize)
+  - [`POST /convert`](#post-convert)
+  - [`POST /optimize`](#post-optimize)
+  - [`GET /process`](#get-process-v111)
+  - [`POST /thumbnail`](#post-thumbnail-v11)
+- [Authentication](#authentication)
+  - [Why two mechanisms](#why-two-mechanisms)
+  - [Signing algorithm](#signing-algorithm)
+  - [Sign in Go](#sign-in-go)
+  - [Sign in JavaScript (Node)](#sign-in-javascript-node)
+  - [Signs URLs for manual testing](#signs-urls-for-manual-testing)
+- [Configuration](#configuration)
+- [Development](#development)
+- [License](#license)
+
 ## Features
 
 - **Resize** with `fit`, `fill`, `stretch` modes
