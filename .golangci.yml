@@ -1,0 +1,31 @@
+linters:
+  enable:
+    - errcheck
+    - gosec
+    - staticcheck
+    - ineffassign
+    - misspell
+    - revive
+    - gofumpt
+    - gocritic
+    - bodyclose
+    - govet
+
+linters-settings:
+  gofumpt:
+    module-path: github.com/DulanDev/GoImager
+  gosec:
+    excludes:
+      - G104  # "Errors unhandled" — we handle them where it matters; noise elsewhere
+      - G304  # "Potential file inclusion via os.Open" — service deliberately opens uploaded files
+  revive:
+    rules:
+      - name: exported
+        disabled: true
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters: [gosec]
+  max-issues-per-linter: 0
+  max-same-issues: 0

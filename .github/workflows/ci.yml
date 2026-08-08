@@ -6,14 +6,18 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   test:
+    name: Test + Vet
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.22"
+          go-version: "1.23"
       - name: Install dependencies
         run: go mod download
       - name: Install optimizer tools
@@ -24,3 +28,53 @@ jobs:
         run: go test ./... -v -coverprofile=coverage.out
       - name: Coverage report
         run: go tool cover -func=coverage.out
+
+  lint:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.23"
+      - name: Install optimizer tools
+        run: sudo apt-get update && sudo apt-get install -y pngquant webp libjpeg-turbo-progs libavif-bin
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.60
+          args: --timeout=5m
+
+  spectral:
+    name: Spectral (OpenAPI)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Spectral lint
+        uses: stoplightio/spectral-action@latest
+        with:
+          file: api/openapi.yaml
+          spectral_ruleset: .spectral.yaml
+
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: goimager:ci
+          build-args: VERSION=ci
+      - name: Smoke test /health
+        run: |
+          docker run --rm -d -p 8080:8080 --name goimager-ci goimager:ci
+          sleep 3
+          curl -sf localhost:8080/health | grep -q '"status":"ok"'
+          docker stop goimager-ci
