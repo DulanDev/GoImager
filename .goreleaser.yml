@@ -65,6 +65,3 @@ release:
   draft: true
   prerelease: auto
   name_template: "{{ .Tag }}"
-
-brew_unsupported: true
-nix: []
