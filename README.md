@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/goimager-logo.png" alt="GoImager" width="220"/>
+</p>
+
 # GoImager
 
 [![Build](https://github.com/DulanDev/GoImager/actions/workflows/ci.yml/badge.svg)](https://github.com/DulanDev/GoImager/actions/workflows/ci.yml)
