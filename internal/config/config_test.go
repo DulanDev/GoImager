@@ -24,7 +24,7 @@ func TestDefaults(t *testing.T) {
 func TestYamlOverride(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "goimager.yaml")
-	if err := os.WriteFile(path, []byte("server:\n  port: 9090\n  max_file_size_mb: 5\n"), 0644); err != nil {
+	if err := os.WriteFile(path, []byte("server:\n  port: 9090\n  max_file_size_mb: 5\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	cfg := defaults()

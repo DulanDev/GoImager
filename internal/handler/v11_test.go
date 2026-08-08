@@ -45,12 +45,8 @@ func pngBody(t *testing.T, w, h int) (*bytes.Buffer, string) {
 	return body, mw.FormDataContentType()
 }
 
-// multipartWithDims wraps raw bytes as a multipart image field plus
-// width / height fields, returning the body and content type.
-func multipartWithDims(t *testing.T, imgBytes []byte, w, h string) (*bytes.Buffer, string) {
-	return multipartWithFields(t, imgBytes, map[string]string{"width": w, "height": h})
-}
-
+// multipartWithFields returns a multipart body containing the image
+// plus one form field per map entry.
 func multipartWithFields(t *testing.T, imgBytes []byte, fields map[string]string) (*bytes.Buffer, string) {
 	t.Helper()
 	body := &bytes.Buffer{}

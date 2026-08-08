@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/disintegration/imaging"
 	"github.com/DulanDev/GoImager/internal/config"
+	"github.com/disintegration/imaging"
 )
 
 // ProcessParams carries the URL-parameter-driven transformation request.

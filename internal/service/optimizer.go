@@ -183,4 +183,3 @@ func pngquantAvail(cfg config.Optimizer) bool {
 func mozjpegAvail(cfg config.Optimizer) bool {
 	return toolExists(cfg.MozjpegPath)
 }
-

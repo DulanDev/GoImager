@@ -12,11 +12,11 @@ import (
 )
 
 type Server struct {
-	Cfg          config.Config
-	Log          *slog.Logger
-	HTTPClient   *http.Client
-	OpenAPIYAML  []byte // embedded api/openapi.yaml; nil = openapi disabled
-	UIFS         fs.FS  // embedded api/ui subtree; nil = /docs 404
+	Cfg         config.Config
+	Log         *slog.Logger
+	HTTPClient  *http.Client
+	OpenAPIYAML []byte // embedded api/openapi.yaml; nil = openapi disabled
+	UIFS        fs.FS  // embedded api/ui subtree; nil = /docs 404
 }
 
 func New(cfg config.Config, log *slog.Logger, openapiYAML []byte, uiFS fs.FS) *Server {

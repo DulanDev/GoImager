@@ -32,9 +32,9 @@ var blockedCIDRs = func() []*net.IPNet {
 		"0.0.0.0/8",
 		"100.64.0.0/10", // CGNAT
 		"::1/128",
-		"fc00::/7", // IPv6 ULA
+		"fc00::/7",  // IPv6 ULA
 		"fe80::/10", // link-local
-		"::/128",   // unspecified
+		"::/128",    // unspecified
 	}
 	out := make([]*net.IPNet, 0, len(specs))
 	for _, s := range specs {

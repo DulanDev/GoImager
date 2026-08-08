@@ -97,9 +97,9 @@ func TestSwaggerUI_ServesIndex(t *testing.T) {
 	// (i.e. index.html lives at "index.html", not "ui/index.html"). main.go
 	// does the fs.Sub(ui) before calling handler.New.
 	uiFS := fstest.MapFS{
-		"index.html":             {Data: []byte("<!doctype html><title>ui</title>")},
-		"swagger-ui.css":         {Data: []byte("body{color:red}")},
-		"swagger-ui-bundle.js":  {Data: []byte("console.log('bundle')")},
+		"index.html":           {Data: []byte("<!doctype html><title>ui</title>")},
+		"swagger-ui.css":       {Data: []byte("body{color:red}")},
+		"swagger-ui-bundle.js": {Data: []byte("console.log('bundle')")},
 	}
 	srv := &Server{UIFS: uiFS}
 	h := srv.SwaggerUI()

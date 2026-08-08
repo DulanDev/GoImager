@@ -75,10 +75,10 @@ func TestResizeImageStretch(t *testing.T) {
 
 func TestResizeImageInvalid(t *testing.T) {
 	cases := []struct {
-		name          string
-		w, h          int
-		mode          string
-		codeContains  string
+		name         string
+		w, h         int
+		mode         string
+		codeContains string
 	}{
 		{"zero both", 0, 0, "fit", "INVALID_DIMENSIONS"},
 		{"negative", -1, 50, "fit", "INVALID_DIMENSIONS"},

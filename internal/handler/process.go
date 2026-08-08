@@ -33,7 +33,8 @@ func (s *Server) Process(w http.ResponseWriter, r *http.Request) {
 
 func queryInt(q interface {
 	Get(string) string
-}, key string) int {
+}, key string,
+) int {
 	v := q.Get(key)
 	if v == "" {
 		return 0
@@ -47,7 +48,8 @@ func queryInt(q interface {
 
 func queryFloat(q interface {
 	Get(string) string
-}, key string) float64 {
+}, key string,
+) float64 {
 	v := q.Get(key)
 	if v == "" {
 		return 0

@@ -14,8 +14,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/disintegration/imaging"
 	"github.com/DulanDev/GoImager/internal/config"
+	"github.com/disintegration/imaging"
 	_ "golang.org/x/image/webp"
 )
 

@@ -12,9 +12,9 @@ import (
 )
 
 type exifInfo struct {
-	Camera   *string    `json:"camera"`
-	TakenAt  *time.Time `json:"taken_at"`
-	GPS      *gpsPoint  `json:"gps"`
+	Camera  *string    `json:"camera"`
+	TakenAt *time.Time `json:"taken_at"`
+	GPS     *gpsPoint  `json:"gps"`
 }
 
 type gpsPoint struct {
@@ -23,23 +23,23 @@ type gpsPoint struct {
 }
 
 type Info struct {
-	Width      int     `json:"width"`
-	Height     int     `json:"height"`
-	Format     string  `json:"format"`
-	SizeBytes  int64   `json:"size_bytes"`
-	ColorModel string  `json:"color_model"`
+	Width      int       `json:"width"`
+	Height     int       `json:"height"`
+	Format     string    `json:"format"`
+	SizeBytes  int64     `json:"size_bytes"`
+	ColorModel string    `json:"color_model"`
 	Exif       *exifInfo `json:"exif"`
 }
 
 const (
-	tagMake              = 271
-	tagModel             = 272
-	tagDateTime          = 306
+	tagMake             = 271
+	tagModel            = 272
+	tagDateTime         = 306
 	tagDateTimeOriginal = 36867
-	tagGPSLat            = 2
-	tagGPSLatRef         = 1
-	tagGPSLng            = 4
-	tagGPSLngRef         = 3
+	tagGPSLat           = 2
+	tagGPSLatRef        = 1
+	tagGPSLng           = 4
+	tagGPSLngRef        = 3
 )
 
 func InfoFromReader(src io.Reader) (*Info, error) {
@@ -113,6 +113,9 @@ func scanJPEGExif(data []byte) *exifInfo {
 		}
 		seg := data[i+4 : i+2+segLen]
 		if marker == 0xE1 && bytes.HasPrefix(seg, []byte("Exif\x00\x00")) {
+			if len(seg) < 8 { // "Exif\x00\x00" + at least 2-byte TIFF endian
+				return nil
+			}
 			tiff := seg[6:]
 			return parseTIFF(tiff)
 		}
@@ -134,7 +137,7 @@ func parseTIFF(data []byte) *exifInfo {
 	default:
 		return nil
 	}
-	offsetIFD0 := bo.Uint32(data[4:8])
+	offsetIFD0 := bo.Uint32(data[4:8]) //nolint:gosec // G602: len(data) >= 8 checked above
 	if int(offsetIFD0)+2 > len(data) {
 		return nil
 	}
@@ -272,13 +275,13 @@ func readGPS(data []byte, off int, bo binary.ByteOrder) *gpsPoint {
 			lngRef = readString(data, e, bo)
 		case tagGPSLat:
 			r := readRationalArray(data, e, bo)
-			if r != nil && len(r) >= 3 {
+			if len(r) >= 3 {
 				lat[0], lat[1], lat[2] = r[0], r[1], r[2]
 				haveLat = true
 			}
 		case tagGPSLng:
 			r := readRationalArray(data, e, bo)
-			if r != nil && len(r) >= 3 {
+			if len(r) >= 3 {
 				lng[0], lng[1], lng[2] = r[0], r[1], r[2]
 				haveLng = true
 			}

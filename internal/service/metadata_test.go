@@ -100,7 +100,7 @@ func TestPngQualityRange(t *testing.T) {
 	if lo < 0 || hi > 100 {
 		t.Errorf("range %d-%d", lo, hi)
 	}
-	lo, hi = pngQualityRange(95)
+	_, hi = pngQualityRange(95)
 	if hi > 100 {
 		t.Errorf("hi %d", hi)
 	}
@@ -173,7 +173,7 @@ func makeEXIFJPEG(t *testing.T, camera, dt string) []byte {
 	if err := jpeg.Encode(&img, src, &jpeg.Options{Quality: 50}); err != nil {
 		t.Fatalf("jpeg encode: %v", err)
 	}
-out := new(bytes.Buffer)
+	out := new(bytes.Buffer)
 	out.Write([]byte{0xFF, 0xD8})
 	out.Write([]byte{0xFF, 0xE1})
 	var segLen [2]byte
@@ -465,7 +465,10 @@ func buildGPSExif() []byte {
 	latRatOff := gpsIFDOff + uint32(2+4*12+4)
 	lngRatOff := latRatOff + 24
 	binary.Write(buf, bo, uint16(4))
-	type entry struct{ tag, typ uint16; count, off uint32 }
+	type entry struct {
+		tag, typ   uint16
+		count, off uint32
+	}
 	entries := []entry{
 		{tagGPSLatRef, 2, 2, uint32('N')},
 		{tagGPSLat, 5, 3, latRatOff},

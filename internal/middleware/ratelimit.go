@@ -10,18 +10,18 @@ import (
 )
 
 type bucket struct {
-	tokens   float64
-	last     time.Time
+	tokens float64
+	last   time.Time
 }
 
 // RateLimiter is a per-client-IP token bucket limiter. Either per-second
 // (rps) or per-minute (rpm) refill is used; rpm overrides rps when > 0.
 // A zero rate disables limiting entirely.
 type RateLimiter struct {
-	rate     float64 // tokens added per second
-	burst    float64
-	mu       sync.Mutex
-	clients  map[string]*bucket
+	rate    float64 // tokens added per second
+	burst   float64
+	mu      sync.Mutex
+	clients map[string]*bucket
 }
 
 func NewRateLimiter(rps, rpm int) *RateLimiter {

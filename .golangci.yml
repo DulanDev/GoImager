@@ -17,6 +17,7 @@ linters-settings:
   gosec:
     excludes:
       - G104  # "Errors unhandled" — we handle them where it matters; noise elsewhere
+      - G204  # "Subprocess with variable args" — optimizer CLI paths come from operator config, not user input
       - G304  # "Potential file inclusion via os.Open" — service deliberately opens uploaded files
   revive:
     rules:

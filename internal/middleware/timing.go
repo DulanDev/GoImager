@@ -21,8 +21,8 @@ func ProcessingTime(next http.Handler) http.Handler {
 
 type timingWriter struct {
 	http.ResponseWriter
-	start        time.Time
-	headerStamp  bool
+	start       time.Time
+	headerStamp bool
 }
 
 func (t *timingWriter) stamp() {
