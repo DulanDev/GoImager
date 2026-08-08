@@ -2,6 +2,8 @@
 # Build the binary straight from source on every platform supported by GoReleaser.
 # Docker image publishing is handled separately in `.github/workflows/release.yml`
 # (uses the project's existing `Dockerfile`, which bundles the optimizer CLIs).
+version: 2
+
 project_name: goimager
 
 before:
