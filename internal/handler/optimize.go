@@ -54,5 +54,5 @@ func (s *Server) Optimize(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Optimized-Size", strconv.FormatInt(optimizedSize, 10))
 	w.Header().Set("X-Reduction-Percent", strconv.FormatFloat(reduction, 'f', 2, 64))
 	w.Header().Set("Content-Type", res.ContentType)
-	w.Write(res.Bytes)
+	_, _ = w.Write(res.Bytes)
 }

@@ -58,7 +58,7 @@ func run() int {
 	// Bearer API_KEY middleware — see Authentication Model in specs.
 	r.Handle("/process", middleware.VerifySign(cfg.Auth.SigningKeysList(), http.HandlerFunc(srv.Process))).Methods("GET")
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("GoImager"))
+		_, _ = w.Write([]byte("GoImager"))
 	}).Methods("GET")
 	r.HandleFunc("/openapi.yaml", srv.OpenAPI).Methods("GET")
 	r.HandleFunc("/openapi.json", srv.OpenAPI).Methods("GET")

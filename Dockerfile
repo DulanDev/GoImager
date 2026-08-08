@@ -14,7 +14,7 @@ FROM alpine:3.19
 RUN apk --no-cache add \
         ca-certificates \
         pngquant \
-        mozjpeg \
+        libjpeg-turbo-utils \
         libwebp-tools \
         libavif-apps \
         wget \

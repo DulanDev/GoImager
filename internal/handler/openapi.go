@@ -42,7 +42,7 @@ func (s *Server) OpenAPI(w http.ResponseWriter, r *http.Request) {
 // drops the /docs/ mount prefix before FileServer looks up the file.
 func (s *Server) SwaggerUI() http.Handler {
 	if s.UIFS == nil {
-		return http.HandlerFunc(http.NotFound)
+		return http.NotFoundHandler()
 	}
 	return http.StripPrefix("/docs", http.FileServer(http.FS(s.UIFS)))
 }

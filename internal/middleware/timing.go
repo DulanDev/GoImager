@@ -46,7 +46,5 @@ func (t *timingWriter) Write(p []byte) (int, error) {
 
 // ProcessingTimeAdapter returns a gorilla/mux-compatible adapter.
 func ProcessingTimeAdapter() func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return ProcessingTime(next)
-	}
+	return ProcessingTime
 }

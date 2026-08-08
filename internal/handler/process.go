@@ -28,7 +28,7 @@ func (s *Server) Process(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", ct)
-	w.Write(out)
+	_, _ = w.Write(out)
 }
 
 func queryInt(q interface {

@@ -49,7 +49,7 @@ func (s *Server) Resize(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", ct)
-	w.Write(out)
+	_, _ = w.Write(out)
 }
 
 func writeServiceError(w http.ResponseWriter, err error) {
