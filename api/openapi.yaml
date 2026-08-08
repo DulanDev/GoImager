@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: GoImager API
-  version: 1.1.1
+  version: 1.2.0
   description: |
     Self-hosted, privacy-first image processing microservice written in Go.
     Lightweight open-source alternative to Cloudinary/imgix — no SaaS fees,
@@ -287,7 +287,7 @@ components:
       type: object
       properties:
         status: { type: string, example: ok }
-        version: { type: string, example: 1.1.0 }
+        version: { type: string, example: 1.2.0 }
     Info:
       type: object
       properties:

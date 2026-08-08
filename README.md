@@ -1,7 +1,7 @@
 # GoImager
 
 [![Build](https://github.com/DulanDev/GoImager/actions/workflows/ci.yml/badge.svg)](https://github.com/DulanDev/GoImager/actions/workflows/ci.yml)
-[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go)](https://go.dev/)
+[![Go](https://img.shields.io/badge/Go-1.23+-00ADD8?logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A self-hosted, privacy-first image processing microservice written in Go.
@@ -122,7 +122,7 @@ All non-binary errors return structured JSON:
 ### `GET /health`
 
 ```json
-{ "status": "ok", "version": "1.0.0" }
+{ "status": "ok", "version": "1.2.0" }
 ```
 
 ### `POST /info`
